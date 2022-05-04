@@ -41,7 +41,6 @@ export default function UserCreate() {
   });
 
   const { errors } = formState;
-  console.log(errors);
 
   const handleCreateUser: SubmitHandler<CreateUserFormData> = async (
     values

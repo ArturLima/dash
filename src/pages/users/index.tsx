@@ -13,18 +13,47 @@ import {
   Tr,
   Text,
   useBreakpointValue,
+  Spinner,
 } from "@chakra-ui/react";
 import Link from "next/link";
+import { useQuery } from "react-query";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import { Sidebar } from "../../components/Siderbar";
 
 export default function UserList() {
+  const { data, isLoading, error } = useQuery(
+    "users",
+    async () => {
+      const response = await fetch("http://localhost:3000/api/users");
+      const data = await response.json();
+
+      const users = data.users.map((user) => {
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: new Date(user.createdAt).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }),
+        };
+      });
+
+      return users;
+    },
+    {
+      staleTime: 1000 * 5, //seconds
+    }
+  );
+
   const isWideversion = useBreakpointValue({
     base: false,
     lg: true,
   });
+
   return (
     <Box>
       <Header />
@@ -48,44 +77,62 @@ export default function UserList() {
               </Button>
             </Link>
           </Flex>
-          <Table colorScheme="whiteAlpha">
-            <Thead>
-              <Tr>
-                <Th px={["4", "4", "6"]} color="gray.300" width="8">
-                  <Checkbox colorScheme="pink" />
-                </Th>
-                <Th>Usuário</Th>
-                {isWideversion && <Th>Data de cadastro</Th>}
-                <Th width="8"></Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              <Td px={["4", "4", "6"]}>
-                <Checkbox colorScheme="pink" />
-              </Td>
-              <Td>
-                <Box>
-                  <Text fontWeight="bold">Artur Lima</Text>
-                  <Text fontSize="small" color="gray.300">
-                    arturpeixotoo@gmail.com
-                  </Text>
-                </Box>
-              </Td>
-              {isWideversion && <Td>04 de Abril, 2021</Td>}
-              <Td>
-                <Button
-                  as="a"
-                  size="sm"
-                  fontSize="sm"
-                  colorScheme="purple"
-                  leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                >
-                  {isWideversion ? "Editar" : ""}
-                </Button>
-              </Td>
-            </Tbody>
-          </Table>
-          <Pagination />
+          {isLoading ? (
+            <Flex justify="center">
+              <Spinner />
+            </Flex>
+          ) : error ? (
+            <Flex justify="center">
+              <Text>Falha ao obter dados dos usuários</Text>
+            </Flex>
+          ) : (
+            <>
+              <Table colorScheme="whiteAlpha">
+                <Thead>
+                  <Tr>
+                    <Th px={["4", "4", "6"]} color="gray.300" width="8">
+                      <Checkbox colorScheme="pink" />
+                    </Th>
+                    <Th>Usuário</Th>
+                    {isWideversion && <Th>Data de cadastro</Th>}
+                    <Th width="8"></Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {data.map((user) => {
+                    return (
+                      <Tr key={user.id}>
+                        <Td px={["4", "4", "6"]}>
+                          <Checkbox colorScheme="pink" />
+                        </Td>
+                        <Td>
+                          <Box>
+                            <Text fontWeight="bold">{user.name}</Text>
+                            <Text fontSize="small" color="gray.300">
+                              {user.email}
+                            </Text>
+                          </Box>
+                        </Td>
+                        {isWideversion && <Td>{user.createdAt}</Td>}
+                        <Td>
+                          <Button
+                            as="a"
+                            size="sm"
+                            fontSize="sm"
+                            colorScheme="purple"
+                            leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
+                          >
+                            {isWideversion ? "Editar" : ""}
+                          </Button>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+              <Pagination />
+            </>
+          )}
         </Box>
       </Flex>
     </Box>
